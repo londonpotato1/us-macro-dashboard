@@ -149,9 +149,8 @@
 
 <script>
 // ===== 설정 =====
-// Cloudflare Worker 배포 후 그 URL을 붙이면 주가·유가까지 전부 활성화됩니다.
-// 비워두면(현재) CORS 가능한 3개(금리·코인·Fed)를 브라우저가 직접 호출 — 배포 없이도 작동.
-const WORKER_URL = "";
+// 금리·코인·Fed → 브라우저가 직접 호출(CORS 허용, 실시간).
+// 주가·유가(stooq) → CORS 차단이라 GitHub Action이 30분마다 생성하는 data.json(같은 도메인)에서 읽음.
 const REFRESH_MS = 60000;
 
 let prev = {};   // 직전 값 (변화 화살표용)
@@ -178,7 +177,7 @@ function parseFed(ev){
   return { zero_cuts_prob:o["0"]??null, outcomes:o, source:"Polymarket" };
 }
 async function fetchDirect(){
-  const out = { updated:new Date().toISOString(), partial:true, errors:[] };
+  const out = { updated:new Date().toISOString(), errors:[] };
   const [cg,tr,pm] = await Promise.allSettled([
     fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true").then(r=>r.json()),
     fetch("https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/2026/all?type=daily_treasury_yield_curve&field_tdr_date_value=2026&_format=csv").then(r=>r.text()),
@@ -194,10 +193,12 @@ async function fetchDirect(){
   return out;
 }
 async function loadData(){
-  if (WORKER_URL){
-    try { const r = await fetch(WORKER_URL,{cache:"no-store"}); if(r.ok) return await r.json(); } catch{}
-  }
-  return await fetchDirect();
+  const direct = await fetchDirect();                       // 금리·코인·Fed 실시간(CORS OK)
+  try {
+    const r = await fetch("./data.json?t="+Date.now(), {cache:"no-store"});
+    if (r.ok){ const j = await r.json(); if (j.stocks_oil) direct.stocks_oil = j.stocks_oil; }  // 주가·유가 = Action data.json
+  } catch {}
+  return direct;
 }
 
 // ---- 렌더 ----
@@ -274,10 +275,10 @@ function render(data){
   renderFed(data.fed); if(data.fed) $("srcFed").textContent=data.fed.source||"";
   // 상태바
   const now=new Date();
-  const partial = data.partial || !data.stocks_oil;
+  const partial = !data.stocks_oil;   // 주가·유가(data.json) 미수신 시에만 부분 상태
   $("dot").className = "dot "+(data.errors&&data.errors.length?"err":partial?"stale":"live");
   $("statusTxt").innerHTML = `마지막 갱신 <b>${now.toLocaleTimeString("ko-KR")}</b>`+
-    (partial?' · <span style="color:var(--amber)">일부 지표는 Worker 배포 필요</span>':"");
+    (partial?' · <span style="color:var(--amber)">주가·유가 갱신 대기</span>':"");
 }
 
 let loading=false;

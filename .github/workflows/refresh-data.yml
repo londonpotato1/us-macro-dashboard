@@ -1,0 +1,37 @@
+name: refresh-data
+
+# 주가·유가(CORS 차단 소스)를 서버사이드에서 받아 data.json으로 커밋.
+# 대시보드는 같은 도메인의 data.json을 읽으므로 CORS 무관. 새 계정·시크릿 불필요.
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # 30분마다 (GitHub 스케줄러 특성상 지연 가능)
+  workflow_dispatch: {}        # 수동 실행 버튼
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: build data.json
+        run: node scripts/build-data.mjs
+      - name: commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          if git diff --staged --quiet; then
+            echo "변경 없음 — 커밋 생략"
+          else
+            git commit -m "chore: refresh data.json [skip ci]"
+            git push
+          fi

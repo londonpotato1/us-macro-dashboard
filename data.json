@@ -1,5 +1,5 @@
 {
-  "updated": "2026-05-25T20:04:18.936Z",
+  "updated": "2026-05-25T21:38:35.768Z",
   "errors": [],
   "yields": {
     "date": "05/22/2026",
@@ -9,10 +9,10 @@
     "source": "US Treasury (daily par yield)"
   },
   "crypto": {
-    "btc_usd": 77382,
-    "btc_24h_pct": 0.9984913226014531,
-    "eth_usd": 2120.14,
-    "eth_24h_pct": 1.2406972278751949,
+    "btc_usd": 77248,
+    "btc_24h_pct": 1.4041327622958806,
+    "eth_usd": 2109.53,
+    "eth_24h_pct": 1.7966352393357805,
     "source": "CoinGecko"
   },
   "stocks_oil": {
@@ -26,13 +26,13 @@
   },
   "fed": {
     "title": "How many Fed rate cuts in 2026?",
-    "zero_cuts_prob": 0.6585,
+    "zero_cuts_prob": 0.6575,
     "outcomes": {
-      "0": 0.6585,
+      "0": 0.6575,
       "1": 0.195,
       "2": 0.095,
       "3": 0.0335,
-      "4": 0.0155,
+      "4": 0.015,
       "5": 0.0075,
       "6": 0.0055,
       "7": 0.0045,

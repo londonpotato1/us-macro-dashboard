@@ -1,0 +1,7 @@
+name = "us-macro-data"
+main = "src/index.js"
+compatibility_date = "2026-05-01"
+
+# 시크릿 불필요 — 5개 소스 모두 키리스(Treasury·CoinGecko·stooq·Polymarket).
+# 배포:  cd worker && npx wrangler deploy
+# 인증:  npx wrangler login   (Cloudflare 무료 계정 1회)

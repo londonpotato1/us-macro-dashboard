@@ -3,372 +3,294 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>미국 빅테크, 지금 사도 될까? — 초보자용 시장 진단</title>
+<title>미국 매크로 실시간 대시보드</title>
 <style>
   :root{
     --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
     --txt:#e8eaed; --muted:#9aa3b2; --dim:#6b7280;
-    --green:#2ec28a; --green-bg:rgba(46,194,138,.12);
-    --red:#ef5a5a; --red-bg:rgba(239,90,90,.12);
-    --amber:#f5b942; --amber-bg:rgba(245,185,66,.12);
-    --blue:#5b9dff; --blue-bg:rgba(91,157,255,.12);
-    --radius:16px;
+    --green:#2ec28a; --red:#ef5a5a; --amber:#f5b942; --blue:#5b9dff;
+    --green-bg:rgba(46,194,138,.12); --red-bg:rgba(239,90,90,.12);
+    --amber-bg:rgba(245,185,66,.12); --blue-bg:rgba(91,157,255,.12);
     --font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Segoe UI",Roboto,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--txt);font-family:var(--font);line-height:1.65;
-    -webkit-font-smoothing:antialiased;padding:0 0 80px}
-  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  body{background:var(--bg);color:var(--txt);font-family:var(--font);line-height:1.6;
+    -webkit-font-smoothing:antialiased;padding:0 0 70px}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+  a{color:var(--blue);text-decoration:none}
   /* HEADER */
-  header{padding:48px 0 32px;border-bottom:1px solid var(--line);margin-bottom:36px}
+  header{padding:40px 0 24px;border-bottom:1px solid var(--line);margin-bottom:28px}
   .eyebrow{color:var(--blue);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-  h1{font-size:34px;font-weight:800;letter-spacing:-.02em;margin:10px 0 8px;line-height:1.25}
-  .sub{color:var(--muted);font-size:15px}
-  .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-  .chip{font-size:12.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);
-    padding:5px 12px;border-radius:999px}
-  .chip.ok{color:var(--green);border-color:rgba(46,194,138,.4)}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:8px 0 6px}
+  .sub{color:var(--muted);font-size:14.5px}
+  /* STATUS BAR */
+  .status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;font-size:13px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--dim);flex:none}
+  .dot.live{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+  .dot.stale{background:var(--amber)} .dot.err{background:var(--red)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .status .s-txt{color:var(--muted)} .status .s-txt b{color:var(--txt)}
+  .status .refresh{margin-left:auto;color:var(--dim);font-size:12px}
+  .btn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 12px;
+    color:var(--muted);font-size:12.5px;cursor:pointer}
+  .btn:hover{border-color:var(--blue);color:var(--txt)}
   /* SECTION */
-  section{margin:40px 0}
-  .sec-h{display:flex;align-items:center;gap:10px;margin-bottom:18px}
-  .sec-n{width:26px;height:26px;border-radius:8px;background:var(--blue-bg);color:var(--blue);
-    font-size:13px;font-weight:800;display:grid;place-items:center;flex:none}
-  .sec-h h2{font-size:21px;font-weight:800;letter-spacing:-.01em}
-  .sec-h .hint{color:var(--dim);font-size:13px;margin-left:auto}
+  section{margin:30px 0}
+  .sec-h{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+  .sec-h h2{font-size:18px;font-weight:800}
+  .sec-h .src{color:var(--dim);font-size:12px;margin-left:auto}
+  /* KPI */
+  .grid{display:grid;gap:13px}
+  .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;position:relative}
+  .kpi .lbl{color:var(--muted);font-size:12.5px;font-weight:600;margin-bottom:5px}
+  .kpi .val{font-size:25px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .kpi .val.skel{color:var(--dim)}
+  .kpi .chg{font-size:12.5px;font-weight:700;margin-top:4px;min-height:17px}
+  .kpi .meta{font-size:11px;color:var(--dim);margin-top:6px}
+  .up{color:var(--red)} .down{color:var(--green)} .flat{color:var(--muted)}
+  .kpi.pending{opacity:.55}
+  .kpi .pending-tag{position:absolute;top:12px;right:12px;font-size:10px;font-weight:700;
+    color:var(--amber);background:var(--amber-bg);padding:2px 7px;border-radius:6px}
+  /* FED BAR */
+  .fedbar{display:flex;height:38px;border-radius:9px;overflow:hidden;background:var(--panel2);margin-top:4px}
+  .fedbar div{display:grid;place-items:center;font-size:12px;font-weight:800;color:#0f1115;min-width:0;
+    transition:flex-basis .4s}
+  .fedbar .c0{background:var(--amber)} .fedbar .c1{background:var(--blue)}
+  .fedbar .c2{background:#7c8aa0} .fedbar .cx{background:#3a4150;color:var(--muted)}
+  .fed-note{font-size:12px;color:var(--muted);margin-top:8px}
   /* VERDICT */
   .verdict{background:linear-gradient(135deg,var(--panel),var(--panel2));border:1px solid var(--line);
-    border-radius:var(--radius);padding:26px;display:flex;gap:24px;align-items:center;flex-wrap:wrap}
-  .light{display:flex;flex-direction:column;gap:8px;flex:none}
-  .bulb{width:30px;height:30px;border-radius:50%;background:#272b34;opacity:.3}
-  .bulb.on.r{background:var(--red);opacity:1;box-shadow:0 0 18px var(--red)}
-  .bulb.on.a{background:var(--amber);opacity:1;box-shadow:0 0 18px var(--amber)}
-  .bulb.on.g{background:var(--green);opacity:1;box-shadow:0 0 18px var(--green)}
-  .verdict-txt{flex:1;min-width:260px}
-  .verdict-txt .big{font-size:22px;font-weight:800;color:var(--amber);margin-bottom:6px}
-  .verdict-txt p{color:var(--muted);font-size:14.5px}
-  .verdict-txt b{color:var(--txt)}
-  /* KPI GRID */
-  .grid{display:grid;gap:14px}
-  .kpi-grid{grid-template-columns:repeat(3,1fr)}
-  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
-  .kpi .lbl{color:var(--muted);font-size:12.5px;font-weight:600;margin-bottom:6px}
-  .kpi .val{font-size:26px;font-weight:800;letter-spacing:-.02em}
-  .kpi .note{font-size:12px;margin-top:5px;font-weight:600}
-  .up{color:var(--red)} .down{color:var(--green)} .neu{color:var(--muted)}
-  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-top:8px}
-  .tag.bad{background:var(--red-bg);color:var(--red)}
-  .tag.good{background:var(--green-bg);color:var(--green)}
-  .tag.warn{background:var(--amber-bg);color:var(--amber)}
-  /* ANALOGY */
-  .anlg-grid{grid-template-columns:repeat(3,1fr)}
-  .anlg{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;border-top:3px solid var(--blue)}
-  .anlg h3{font-size:15.5px;font-weight:800;margin-bottom:4px}
-  .anlg .eq{color:var(--blue);font-size:12.5px;font-weight:700;margin-bottom:10px}
-  .anlg p{color:var(--muted);font-size:13.5px}
-  .anlg.red{border-top-color:var(--red)} .anlg.red .eq{color:var(--red)}
-  .anlg.green{border-top-color:var(--green)} .anlg.green .eq{color:var(--green)}
-  /* TUG OF WAR */
-  .tug{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
-  .tug-bar{display:flex;height:46px;border-radius:10px;overflow:hidden;margin:16px 0 8px}
-  .tug-bar .side{display:grid;place-items:center;font-weight:800;font-size:13.5px;color:#0f1115}
-  .tug-bar .l{background:var(--red);flex:1}
-  .tug-bar .r{background:var(--green);flex:1}
-  .tug-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:14px}
-  .tug-cols ul{list-style:none}
-  .tug-cols li{font-size:13px;color:var(--muted);padding:4px 0 4px 18px;position:relative}
-  .tug-cols li::before{content:"";position:absolute;left:0;top:11px;width:7px;height:7px;border-radius:50%}
-  .tug-cols .force-r li::before{background:var(--red)}
-  .tug-cols .force-l li::before{background:var(--green)}
-  .tug-cols h4{font-size:13.5px;margin-bottom:6px}
-  .tug-cols .hr{color:var(--red)} .tug-cols .hg{color:var(--green)}
-  .tug-note{margin-top:16px;font-size:13.5px;color:var(--muted);background:var(--panel2);
-    border-left:3px solid var(--amber);padding:12px 14px;border-radius:0 8px 8px 0}
-  /* HISTORY */
-  .hist{display:grid;gap:12px}
-  .hcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
-    display:grid;grid-template-columns:140px 1fr auto;gap:16px;align-items:center}
-  .hcard .yr{font-weight:800;font-size:15px}
-  .hcard .yr small{display:block;color:var(--dim);font-weight:600;font-size:11.5px;margin-top:2px}
-  .hcard .desc{color:var(--muted);font-size:13.5px}
-  .hcard .desc b{color:var(--txt)}
-  .hcard .res{text-align:right;font-weight:800;font-size:14px;white-space:nowrap}
-  .hcard .res small{display:block;font-size:11px;font-weight:600;color:var(--dim);margin-top:2px}
-  .hcard.now{border-color:rgba(91,157,255,.5);background:linear-gradient(135deg,var(--panel),rgba(91,157,255,.06))}
-  /* CHAIN */
-  .chain{display:grid;gap:10px}
-  .link{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;
-    display:flex;gap:14px;align-items:flex-start}
-  .link .ic{width:24px;height:24px;border-radius:7px;flex:none;display:grid;place-items:center;
-    font-size:13px;font-weight:800}
-  .link .ic.ok{background:var(--green-bg);color:var(--green)}
-  .link .ic.weak{background:var(--red-bg);color:var(--red)}
-  .link .ic.part{background:var(--amber-bg);color:var(--amber)}
-  .link .body h4{font-size:14.5px;font-weight:700}
-  .link .body p{font-size:13px;color:var(--muted);margin-top:3px}
-  .link.weak{border-color:rgba(239,90,90,.5)}
-  .weak-badge{font-size:11px;font-weight:800;color:var(--red);background:var(--red-bg);
-    padding:2px 8px;border-radius:6px;margin-left:6px}
-  /* WATCH */
-  .watch-grid{grid-template-columns:repeat(2,1fr)}
-  .watch{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;
-    border-left:3px solid var(--amber)}
-  .watch h4{font-size:14.5px;font-weight:800;margin-bottom:4px}
-  .watch p{font-size:13px;color:var(--muted)}
-  .watch .when{font-size:11.5px;color:var(--amber);font-weight:700;margin-top:8px}
-  /* CALLOUT */
-  .callout{background:var(--blue-bg);border:1px solid rgba(91,157,255,.3);border-radius:14px;
-    padding:18px 20px;margin-top:14px}
-  .callout h4{color:var(--blue);font-size:14px;font-weight:800;margin-bottom:6px}
-  .callout p{font-size:13.5px;color:var(--muted)}
-  .callout b{color:var(--txt)}
+    border-radius:14px;padding:20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .bulb{width:24px;height:24px;border-radius:50%;background:var(--amber);box-shadow:0 0 14px var(--amber);flex:none}
+  .verdict .vt{flex:1;min-width:240px}
+  .verdict .vt b{color:var(--amber);font-size:16px} .verdict .vt p{color:var(--muted);font-size:13.5px;margin-top:3px}
   /* FOOTER */
-  footer{margin-top:50px;padding-top:24px;border-top:1px solid var(--line);color:var(--dim);font-size:12px}
-  footer .disc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;
-    margin-bottom:18px;color:var(--muted);font-size:13px}
-  footer a{color:var(--blue);text-decoration:none}
-  footer .src{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:8px}
-  @media(max-width:720px){
-    h1{font-size:26px}
-    .kpi-grid,.anlg-grid,.watch-grid{grid-template-columns:1fr}
-    .tug-cols{grid-template-columns:1fr}
-    .hcard{grid-template-columns:1fr;gap:8px}
-    .hcard .res{text-align:left}
-  }
+  footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-size:12px}
+  footer .disc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px;color:var(--muted);font-size:12.5px}
+  footer .src-list{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px}
+  @media(max-width:720px){h1{font-size:24px}.g3,.g2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
-
-  <!-- HEADER -->
   <header>
-    <div class="eyebrow">미국 시장 진단 · 초보자용</div>
-    <h1>지금 미국 빅테크,<br>사도 / 들고 있어도 괜찮을까?</h1>
-    <p class="sub">국채 금리와 시중 유동성으로 본 2026년 5월 현재 상황 — 전문용어 없이 비유로 풀이</p>
-    <div class="meta">
-      <span class="chip">기준일 2026-05-21</span>
-      <span class="chip ok">2차 검증 완료 (에이전트 + Codex 교차검증)</span>
-      <span class="chip">데이터: FRED · 연준 · BLS · FactSet</span>
+    <div class="eyebrow">US Macro · 실시간</div>
+    <h1>미국 매크로 실시간 대시보드</h1>
+    <p class="sub">금리 · 주가 · 유가 · 코인 · 연준 인하확률을 공개 데이터로 자동 취합</p>
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span class="s-txt" id="statusTxt">불러오는 중…</span>
+      <a class="btn" href="analysis.html">▸ 심층 분석 보기</a>
+      <button class="btn" id="refreshBtn" type="button">새로고침</button>
+      <span class="refresh" id="refreshNote">자동 60초 갱신</span>
     </div>
   </header>
 
-  <!-- 1. VERDICT -->
+  <!-- 금리 -->
   <section>
-    <div class="sec-h"><span class="sec-n">1</span><h2>30초 결론</h2><span class="hint">신호등으로 보기</span></div>
+    <div class="sec-h"><h2>미국 국채 금리</h2><span class="src" id="srcYields">—</span></div>
+    <div class="grid g3">
+      <div class="kpi"><div class="lbl">2년물</div><div class="val skel" id="us2y">—</div><div class="chg" id="us2yMeta"></div></div>
+      <div class="kpi"><div class="lbl">10년물</div><div class="val skel" id="us10y">—</div><div class="chg" id="us10yMeta"></div></div>
+      <div class="kpi"><div class="lbl">30년물</div><div class="val skel" id="us30y">—</div><div class="chg" id="us30yMeta"></div></div>
+    </div>
+  </section>
+
+  <!-- 주가 + 유가 -->
+  <section>
+    <div class="sec-h"><h2>주가지수 · 유가</h2><span class="src" id="srcStocks">—</span></div>
+    <div class="grid g3">
+      <div class="kpi"><div class="lbl">S&amp;P 500</div><div class="val skel" id="spx">—</div></div>
+      <div class="kpi"><div class="lbl">나스닥</div><div class="val skel" id="ndx">—</div></div>
+      <div class="kpi"><div class="lbl">다우</div><div class="val skel" id="dji">—</div></div>
+      <div class="kpi"><div class="lbl">WTI 원유</div><div class="val skel" id="wti">—</div></div>
+      <div class="kpi"><div class="lbl">브렌트유</div><div class="val skel" id="brent">—</div></div>
+    </div>
+  </section>
+
+  <!-- 코인 -->
+  <section>
+    <div class="sec-h"><h2>암호화폐 <span style="font-size:11px;color:var(--green)">● 실시간</span></h2><span class="src" id="srcCrypto">—</span></div>
+    <div class="grid g2">
+      <div class="kpi"><div class="lbl">비트코인 (BTC)</div><div class="val skel" id="btc">—</div><div class="chg" id="btcChg"></div></div>
+      <div class="kpi"><div class="lbl">이더리움 (ETH)</div><div class="val skel" id="eth">—</div><div class="chg" id="ethChg"></div></div>
+    </div>
+  </section>
+
+  <!-- Fed 인하확률 -->
+  <section>
+    <div class="sec-h"><h2>2026년 연준 인하 횟수 확률</h2><span class="src" id="srcFed">—</span></div>
+    <div class="fedbar" id="fedbar"><div class="cx" style="flex-basis:100%">불러오는 중…</div></div>
+    <div class="fed-note" id="fedNote"></div>
+  </section>
+
+  <!-- 해석 -->
+  <section>
     <div class="verdict">
-      <div class="light">
-        <div class="bulb"></div>
-        <div class="bulb on a"></div>
-        <div class="bulb"></div>
-      </div>
-      <div class="verdict-txt">
-        <div class="big">노란불 — 조심스러운 "선별 홀딩"</div>
-        <p><b>전량 매도(빨간불)도, 공격 매수(초록불)도 아닙니다.</b> 시중에 도는 돈(유동성)이 늘어 빅테크를 받쳐주는 중이라 급락 위험은 낮지만, 금리가 높아 "주식이 안전자산보다 더 주는 보상"이 거의 0까지 줄었습니다. <b>"금리 내려서 오를 것"에 미리 베팅하는 건 시장 컨센서스(올해 인하 회의적)에 역행</b>합니다.</p>
+      <div class="bulb"></div>
+      <div class="vt">
+        <b>노란불 — 조심스러운 선별 홀딩</b>
+        <p>유동성이 받쳐 급락 위험은 낮지만 금리가 높아 밸류에이션 쿠션이 얇습니다. "인하發 상승"에 미리 베팅은 컨센서스 역행. 자세한 근거·과거 비교·검증은 <a href="analysis.html">심층 분석</a> 참조.</p>
       </div>
     </div>
   </section>
 
-  <!-- 2. SNAPSHOT -->
-  <section>
-    <div class="sec-h"><span class="sec-n">2</span><h2>지금 상황 한눈에</h2><span class="hint">계기판</span></div>
-    <div class="grid kpi-grid">
-      <div class="kpi">
-        <div class="lbl">미국 10년물 국채금리</div>
-        <div class="val">4.67%</div>
-        <div class="note up">▲ 16개월 최고</div>
-      </div>
-      <div class="kpi">
-        <div class="lbl">미국 30년물 국채금리</div>
-        <div class="val">5.18%</div>
-        <div class="note up">▲ 19년 최고 (2007년 이후)</div>
-      </div>
-      <div class="kpi">
-        <div class="lbl">기준금리 (연준)</div>
-        <div class="val">3.50~3.75%</div>
-        <div class="note neu">● 동결 (4/29)</div>
-      </div>
-      <div class="kpi">
-        <div class="lbl">4월 소비자물가(CPI)</div>
-        <div class="val">+3.8%</div>
-        <div class="note up">▲ 에너지 +17.9% (중동발)</div>
-      </div>
-      <div class="kpi">
-        <div class="lbl">연내 금리인하 가능성</div>
-        <div class="val">희박</div>
-        <div class="note neu">시장: "0회" 우세 · 인하 &lt;10~31%</div>
-      </div>
-      <div class="kpi">
-        <div class="lbl">매그니피센트7 (연초 이후)</div>
-        <div class="val down">+8.8%</div>
-        <div class="note down">▲ 알파벳 +28% (최근 며칠만 조정)</div>
-      </div>
-    </div>
-    <div class="callout">
-      <h4>오해 주의 — 빅테크는 "추락 중"이 아닙니다</h4>
-      <p>뉴스에 "테크 매도"가 나와도, 그건 <b>최근 며칠간의 단기 하락</b>입니다. <b>연초부터 보면 빅테크는 오히려 +8.8% 올라 있고</b>, 알파벳(구글)은 +28%로 가장 많이 올랐습니다. "금리 높은데도 잘 버티는 게 아니라, 이미 올라 있는" 상태입니다.</p>
-    </div>
-  </section>
-
-  <!-- 3. ANALOGIES -->
-  <section>
-    <div class="sec-h"><span class="sec-n">3</span><h2>핵심 3가지를 비유로</h2><span class="hint">이것만 알면 끝</span></div>
-    <div class="grid anlg-grid">
-      <div class="anlg red">
-        <div class="eq">금리 = 주식의 중력</div>
-        <h3>높을수록 주식을 끌어내림</h3>
-        <p>은행(국채)이 4.6% 안전하게 주면, 위험한 주식은 "그보다 더 줄게" 해야 사람들이 삽니다. 금리가 높으면 그 문턱이 높아져 주가에 <b>아래로 당기는 힘</b>이 됩니다. 특히 "미래의 돈"으로 평가받는 빅테크가 가장 무겁게 눌립니다.</p>
-      </div>
-      <div class="anlg green">
-        <div class="eq">유동성 = 욕조 물 수위</div>
-        <h3>지금 물이 다시 차오르는 중</h3>
-        <p>시중에 도는 돈을 욕조 수위로 보면, 연준이 수도꼭지를 다시 틀어(돈 거둬들이기 종료) <b>수위가 올라가는 중</b>입니다. 그래서 금리 중력에도 주가가 버팁니다. 단, 비상 물탱크(아래 설명)가 비어 출렁임엔 약합니다.</p>
-      </div>
-      <div class="anlg">
-        <div class="eq">금리인하 = 댐 수문</div>
-        <h3>지금은 잠겨 있음</h3>
-        <p>수문이 열리면(인하) 물이 콸콸 농경지(주식)로 흐릅니다. 하지만 지금 문지기(연준)는 <b>"하류에 물난리(물가)가 나서 못 연다"</b>고 못 박았습니다. 시장도 "올해 안 열림"에 무게를 둡니다.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 4. TUG OF WAR -->
-  <section>
-    <div class="sec-h"><span class="sec-n">4</span><h2>두 힘의 줄다리기</h2><span class="hint">왜 안 무너지나</span></div>
-    <div class="tug">
-      <p style="font-size:14px;color:var(--muted)">지금 시장은 <b style="color:var(--txt)">돈의 "가격"(금리)</b>과 <b style="color:var(--txt)">돈의 "양"(유동성)</b>이 정반대로 당기는 희귀한 상황. 현재는 양(순풍)이 가격(역풍)을 버텨내는 중.</p>
-      <div class="tug-bar">
-        <div class="side l">역풍 · 금리</div>
-        <div class="side r">순풍 · 유동성</div>
-      </div>
-      <div class="tug-cols">
-        <div class="force-r">
-          <h4 class="hr">아래로 끌어내리는 힘 (역풍)</h4>
-          <ul>
-            <li>10년물 4.67% / 30년물 19년 최고</li>
-            <li>중동·에너지발 물가 (CPI +3.8%)</li>
-            <li>연준 인하 불가 (동결 장기화)</li>
-            <li>주식의 보상(ERP)이 거의 0까지 축소</li>
-          </ul>
-        </div>
-        <div class="force-l">
-          <h4 class="hg">위로 떠받치는 힘 (순풍)</h4>
-          <ul>
-            <li>QT(돈 거둬들이기) 2025/12 종료</li>
-            <li>연준 단기국채 매입 (월 ~$400억)</li>
-            <li>정부 지출로 시중에 돈 풀림(TGA)</li>
-            <li>통화량(M2) 전년比 +4.5% 재확장</li>
-          </ul>
-        </div>
-      </div>
-      <div class="tug-note">
-        <b>단, "2020년式 홍수"는 아닙니다.</b> 통화량 증가는 +4.5%(2020년엔 +40%)로 "졸졸" 수준이고, 위기 때 충격을 흡수하던 비상 물탱크(역레포)가 거의 비어 <b>갑작스러운 자금경색에 취약</b>합니다. 받쳐주되 폭발적 상승을 만들 연료는 부족.
-      </div>
-    </div>
-  </section>
-
-  <!-- 5. HISTORY -->
-  <section>
-    <div class="sec-h"><span class="sec-n">5</span><h2>과거 비슷한 시기와 비교</h2><span class="hint">검증된 사례</span></div>
-    <div class="hist">
-      <div class="hcard">
-        <div class="yr">2020~2021<small>유동성 홍수 (QE)</small></div>
-        <div class="desc">연준이 돈을 쏟아부음(자산 $4조→$9조, 통화량 +40%). <b>역대급 유동성 → 테크 포물선 폭등.</b></div>
-        <div class="res down">테크 폭등<small>지금과 다름: 그땐 홍수, 지금은 졸졸</small></div>
-      </div>
-      <div class="hcard now">
-        <div class="yr">2019 "Not QE"<small>가장 닮은 사례 ★</small></div>
-        <div class="desc">단기국채 매입 + <b>금리인하 동반</b> → 테크 랠리(2020초까지). 지금과 메커니즘은 닮음, <b>단 결정적 차이: 그땐 인하가 가능</b>(물가 죽음), 지금은 불가(물가 뜨거움).</div>
-        <div class="res neu">반쪽 닮음<small>인하 부스터가 없음</small></div>
-      </div>
-      <div class="hcard">
-        <div class="yr">2022<small>금리 급등 쇼크</small></div>
-        <div class="desc">금리 1.5%→4.3% 수직 급등. <b>나스닥 -33%, 엔비디아 -50%+.</b> 지금은 완만한 상승이라 속도는 다름.</div>
-        <div class="res up">테크 폭락<small>속도는 지금과 다름</small></div>
-      </div>
-      <div class="hcard">
-        <div class="yr">1970년대<small>스태그플레이션</small></div>
-        <div class="desc">오일쇼크 + 물가 폭등. <b>주식 10년간 실질수익 약 -2%/년, PER 18배→7배 압축.</b> "에너지발 물가"라는 점에서 현재와 가장 닮은 위험 시나리오.</div>
-        <div class="res up">주식 장기 부진<small>에너지·물가 닮음</small></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 6. THESIS CHECK -->
-  <section>
-    <div class="sec-h"><span class="sec-n">6</span><h2>"천천히 올라갈 것" 가설 점검</h2><span class="hint">약한 고리 찾기</span></div>
-    <p style="font-size:14px;color:var(--muted);margin-bottom:14px">흔한 낙관 시나리오: <b style="color:var(--txt)">[급락 없음] + [금리인하 전환] + [천천히 유동성 유입] → [주가 상승]</b>. 각 고리를 데이터로 점검하면:</p>
-    <div class="chain">
-      <div class="link">
-        <div class="ic part">1</div>
-        <div class="body"><h4>급락은 없다</h4><p>가능성 있음 — 유동성이 받쳐줌. 단 보장은 아님 (자금경색 위험 잔존).</p></div>
-      </div>
-      <div class="link weak">
-        <div class="ic weak">2</div>
-        <div class="body"><h4>금리인하로 전환된다 <span class="weak-badge">가장 약한 고리</span></h4><p>지금 데이터가 정면 부정. 시장은 "올해 0회 인하"에 무게(인하 확률 &lt;10~31%). 물가 +3.8%(에너지발)가 인하를 막고 있음. <b>여기에 미리 베팅 = 컨센서스 역행.</b></p></div>
-      </div>
-      <div class="link">
-        <div class="ic ok">3</div>
-        <div class="body"><h4>천천히 유동성이 들어온다</h4><p>이미 진행 중 (QT종료·국채매입·M2 +4.5%). 단 4월 이후 매입 감속 예정 → "졸졸" 수준.</p></div>
-      </div>
-      <div class="link">
-        <div class="ic part">4</div>
-        <div class="body"><h4>그래서 주가가 오른다</h4><p>1+3만으로 <b>"버팀·완만"</b>은 가능. 하지만 2(인하)가 빠지면 <b>"본격 상승"의 동력은 아직 없음.</b></p></div>
-      </div>
-    </div>
-    <div class="callout">
-      <h4>한 가지 더 — "금리인하 = 무조건 상승" 아님</h4>
-      <p>설령 인하가 와도 <b>"왜 인하하느냐"</b>가 갈림길. 물가가 곱게 꺾여서 하는 <b>보험성 인하(1995·2019 → 주가↑)</b>면 좋지만, 경기가 부러져서 하는 <b>침체성 인하(2001·2007 → 주가↓)</b>면 인하해도 주가는 떨어졌습니다.</p>
-    </div>
-  </section>
-
-  <!-- 7. WATCH -->
-  <section>
-    <div class="sec-h"><span class="sec-n">7</span><h2>이 4가지만 지켜보세요</h2><span class="hint">방향 전환 신호</span></div>
-    <div class="grid watch-grid">
-      <div class="watch">
-        <h4>1. 5월 소비자물가(CPI)</h4>
-        <p>물가가 꺾이기 시작하면 → 인하 기대가 살아나는 첫 신호. 낙관 시나리오의 방아쇠.</p>
-        <div class="when">발표: 6월 10일</div>
-      </div>
-      <div class="watch">
-        <h4>2. 국제 유가 · 중동 상황</h4>
-        <p>에너지가 모든 물가의 근원. 이란·중동 긴장 완화 → 유가 하락 → 물가 진정 → 인하 가능.</p>
-        <div class="when">상시 모니터링</div>
-      </div>
-      <div class="watch">
-        <h4>3. 국채 입찰 수요 · 재정적자</h4>
-        <p>금리 상승이 "물가"가 아니라 "정부 빚 과잉발행" 때문일 수 있음. 그렇다면 물가 내려도 금리는 안 내림 — CPI만 봐선 안 됨.</p>
-        <div class="when">국채 입찰 때마다</div>
-      </div>
-      <div class="watch">
-        <h4>4. 은행 자금시장 압력 (SOFR·준비금)</h4>
-        <p>비상 물탱크가 비어 자금경색 위험. 단기금리가 튀거나 준비금이 빠르게 줄면 → 출렁임 경보.</p>
-        <div class="when">상시 모니터링</div>
-      </div>
-    </div>
-    <div class="callout">
-      <h4>중요한 단서 — 금리가 오른 진짜 이유</h4>
-      <p>이 금리 상승이 <b>"물가" 때문인지 "정부 빚(재정적자)" 때문인지</b>는 아직 확실치 않습니다. 만약 빚 때문이라면, <b>물가(CPI)가 내려도 금리는 안 내려올 수 있어</b> "CPI만 보면 된다"는 생각은 위험합니다. 3·4번을 함께 봐야 하는 이유입니다.</p>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
   <footer>
-    <div class="disc">
-      <b>이 대시보드는 시장 분석·교육 자료이며 투자 권유가 아닙니다.</b> 실제 매수·매도·비중 조절은 본인 판단과 책임으로 결정하세요. 모든 수치는 2026-05-21 기준이며 시장 상황에 따라 바뀝니다. 개별 종목(엔비디아 실적 등) 변수는 별도 점검이 필요합니다.
-    </div>
-    <div>데이터 검증 출처 (1차 에이전트 + 2차 Codex 교차검증, FRED 원자료 대조):</div>
-    <div class="src">
-      <a href="https://fred.stlouisfed.org/series/DGS10">FRED 10년물</a>
-      <a href="https://fred.stlouisfed.org/series/DGS30">FRED 30년물</a>
-      <a href="https://fred.stlouisfed.org/series/WALCL">연준 대차대조표</a>
-      <a href="https://fred.stlouisfed.org/series/M2SL">M2 통화량</a>
-      <a href="https://www.federalreserve.gov/">연준 통화정책</a>
-      <a href="https://www.bls.gov/cpi/">BLS 소비자물가</a>
-      <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html">CME FedWatch</a>
-      <a href="https://polymarket.com/event/how-many-fed-rate-cuts-in-2026">Polymarket 인하 전망</a>
+    <div class="disc"><b>시장 분석·교육 자료이며 투자 권유가 아닙니다.</b> 데이터는 공개 소스 자동 취합으로 지연·오류가 있을 수 있습니다. 금리·주가는 직전 거래일 종가(미국 휴장 시 갱신 안 됨), 코인·유가선물은 실시간입니다.</div>
+    <div>소스: US Treasury · stooq · CoinGecko · Polymarket</div>
+    <div class="src-list">
+      <a href="https://fred.stlouisfed.org/series/DGS10">FRED</a>
+      <a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve">Treasury</a>
+      <a href="https://polymarket.com/event/how-many-fed-rate-cuts-in-2026">Polymarket</a>
     </div>
   </footer>
-
 </div>
+
+<script>
+// ===== 설정 =====
+// Cloudflare Worker 배포 후 그 URL을 붙이면 주가·유가까지 전부 활성화됩니다.
+// 비워두면(현재) CORS 가능한 3개(금리·코인·Fed)를 브라우저가 직접 호출 — 배포 없이도 작동.
+const WORKER_URL = "";
+const REFRESH_MS = 60000;
+
+let prev = {};   // 직전 값 (변화 화살표용)
+let timer = null;
+
+// ---- 폴백 파서 (Worker 없이 직접 호출 시) ----
+function parseTreasury(csv){
+  const lines = csv.trim().split("\n");
+  const header = lines[0].split(",").map(h=>h.replace(/"/g,"").trim());
+  const ts = s => { const [m,d,y]=s.split("/").map(Number); return new Date(y,m-1,d).getTime(); };
+  let row=null, best=-1;                       // 정렬 가정 대신 날짜 최댓값 행 선택
+  for (const ln of lines.slice(1)){ if(!ln.trim()) continue; const c=ln.split(","); const t=ts(c[0]); if(t>best){best=t;row=c.map(v=>v.trim());} }
+  const col = n => { const i = header.indexOf(n); return i>=0 ? parseFloat(row[i]) : null; };
+  return { date: row[0], us2y: col("2 Yr"), us10y: col("10 Yr"), us30y: col("30 Yr"), source:"US Treasury" };
+}
+function parseFed(ev){
+  const markets = ev?.[0]?.markets ?? [];
+  const o = {};
+  for (const m of markets){
+    let yes=null; try { yes = parseFloat(JSON.parse(m.outcomePrices)[0]); } catch{}
+    const num = (m.groupItemTitle??"").trim().match(/^\d+/)?.[0];
+    if (num!=null && yes!=null) o[num]=yes;
+  }
+  return { zero_cuts_prob:o["0"]??null, outcomes:o, source:"Polymarket" };
+}
+async function fetchDirect(){
+  const out = { updated:new Date().toISOString(), partial:true, errors:[] };
+  const [cg,tr,pm] = await Promise.allSettled([
+    fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true").then(r=>r.json()),
+    fetch("https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/2026/all?type=daily_treasury_yield_curve&field_tdr_date_value=2026&_format=csv").then(r=>r.text()),
+    fetch("https://gamma-api.polymarket.com/events?slug=how-many-fed-rate-cuts-in-2026").then(r=>r.json()),
+  ]);
+  if (cg.status==="fulfilled") out.crypto={ btc_usd:cg.value.bitcoin?.usd, btc_24h_pct:cg.value.bitcoin?.usd_24h_change, eth_usd:cg.value.ethereum?.usd, eth_24h_pct:cg.value.ethereum?.usd_24h_change, source:"CoinGecko" };
+  else out.errors.push("crypto");
+  if (tr.status==="fulfilled") { try { out.yields=parseTreasury(tr.value); } catch{ out.errors.push("yields"); } }
+  else out.errors.push("yields");
+  if (pm.status==="fulfilled") { try { out.fed=parseFed(pm.value); } catch{ out.errors.push("fed"); } }
+  else out.errors.push("fed");
+  out.stocks_oil = null; // stooq = CORS 차단 → Worker 프록시 필요
+  return out;
+}
+async function loadData(){
+  if (WORKER_URL){
+    try { const r = await fetch(WORKER_URL,{cache:"no-store"}); if(r.ok) return await r.json(); } catch{}
+  }
+  return await fetchDirect();
+}
+
+// ---- 렌더 ----
+const $ = id => document.getElementById(id);
+const fmt = (n,d=2) => (typeof n==="number" && !isNaN(n)) ? n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}) : null;
+
+// 색상 의미: .up=빨강 .down=초록. 금리는 상승=위험(빨강), 코인은 상승=긍정(초록)이라 의도적으로 반대 클래스 사용.
+function setYield(id, v){
+  const el=$(id), meta=$(id+"Meta");
+  if (v==null || isNaN(v)){ el.textContent="—"; el.classList.add("skel"); return; }
+  el.textContent = fmt(v,2)+"%"; el.classList.remove("skel");
+  if (typeof prev[id]==="number"){
+    const d=v-prev[id];
+    meta.className="chg "+(d>0?"up":d<0?"down":"flat");
+    meta.textContent = (d>0?"▲ +":d<0?"▼ ":"● ")+fmt(Math.abs(d)*100,1)+"bp";
+  }
+  prev[id]=v;
+}
+function setNum(id, v, opts={}){
+  const el=$(id);
+  if (v==null || isNaN(v)){ el.textContent="—"; el.classList.add("skel"); return; }
+  el.textContent=(opts.prefix||"")+fmt(v,opts.d??2); el.classList.remove("skel");
+}
+function setCrypto(id, price, pct){
+  const el=$(id), chg=$(id+"Chg");
+  if (price==null || isNaN(price)){ el.textContent="—"; el.classList.add("skel"); chg.textContent=""; return; }
+  el.textContent="$"+fmt(price,0); el.classList.remove("skel");
+  if (typeof pct==="number"){ chg.className="chg "+(pct>0?"down":pct<0?"up":"flat");
+    chg.textContent=(pct>0?"▲ +":pct<0?"▼ ":"● ")+fmt(Math.abs(pct),2)+"% (24h)"; }
+}
+function renderFed(fed){
+  const bar=$("fedbar"), note=$("fedNote");
+  if (!fed || !fed.outcomes){ bar.innerHTML='<div class="cx" style="flex-basis:100%">데이터 없음</div>'; return; }
+  const o=fed.outcomes, p0=(o["0"]||0), p1=(o["1"]||0), p2=(o["2"]||0), rest=Math.max(0,1-p0-p1-p2);
+  const total=(p0+p1+p2+rest)||1;            // 반올림 합>1 시 정규화(bar overflow 방지)
+  const pct=x=>Math.round((x/total)*100);
+  bar.innerHTML =
+    `<div class="c0" style="flex-basis:${pct(p0)}%">0회 ${pct(p0)}%</div>`+
+    `<div class="c1" style="flex-basis:${pct(p1)}%">${p1>0.05?"1회 "+pct(p1)+"%":""}</div>`+
+    `<div class="c2" style="flex-basis:${pct(p2)}%">${p2>0.05?"2회 "+pct(p2)+"%":""}</div>`+
+    `<div class="cx" style="flex-basis:${pct(rest)}%">${rest>0.05?"3+회":""}</div>`;
+  note.textContent = `시장은 "올해 ${pct(p0)}% 확률로 인하 0회"에 무게 — 인하 베팅은 컨센서스 역행.`;
+}
+function markStocksPending(){
+  ["spx","ndx","dji","wti","brent"].forEach(id=>{
+    const el=$(id), card=el.closest(".kpi");
+    el.textContent="배포 필요"; el.classList.add("skel");
+    if(!card.querySelector(".pending-tag")){ card.classList.add("pending");
+      const t=document.createElement("div"); t.className="pending-tag"; t.textContent="프록시"; card.appendChild(t); }
+  });
+  $("srcStocks").textContent="stooq (Worker 배포 시 활성화)";
+}
+function clearStocksPending(){
+  ["spx","ndx","dji","wti","brent"].forEach(id=>{
+    const card=$(id).closest(".kpi"); card.classList.remove("pending");
+    const t=card.querySelector(".pending-tag"); if(t) t.remove();
+  });
+}
+
+function render(data){
+  // 금리
+  if (data.yields){ setYield("us10y",data.yields.us10y); setYield("us2y",data.yields.us2y); setYield("us30y",data.yields.us30y);
+    $("srcYields").textContent = data.yields.date ? data.yields.date+" 종가" : data.yields.source||""; }
+  // 코인
+  if (data.crypto){ setCrypto("btc",data.crypto.btc_usd,data.crypto.btc_24h_pct); setCrypto("eth",data.crypto.eth_usd,data.crypto.eth_24h_pct);
+    $("srcCrypto").textContent=data.crypto.source||""; }
+  // 주가·유가
+  if (data.stocks_oil){ clearStocksPending();
+    setNum("spx",data.stocks_oil.spx,{d:1}); setNum("ndx",data.stocks_oil.ndx,{d:1}); setNum("dji",data.stocks_oil.dji,{d:1});
+    setNum("wti",data.stocks_oil.wti,{prefix:"$",d:2}); setNum("brent",data.stocks_oil.brent,{prefix:"$",d:2});
+    $("srcStocks").textContent=(data.stocks_oil.asof?data.stocks_oil.asof+" · ":"")+(data.stocks_oil.source||"");
+  } else { markStocksPending(); }
+  // Fed
+  renderFed(data.fed); if(data.fed) $("srcFed").textContent=data.fed.source||"";
+  // 상태바
+  const now=new Date();
+  const partial = data.partial || !data.stocks_oil;
+  $("dot").className = "dot "+(data.errors&&data.errors.length?"err":partial?"stale":"live");
+  $("statusTxt").innerHTML = `마지막 갱신 <b>${now.toLocaleTimeString("ko-KR")}</b>`+
+    (partial?' · <span style="color:var(--amber)">일부 지표는 Worker 배포 필요</span>':"");
+}
+
+let loading=false;
+async function tick(){
+  if (loading) return;            // 느린 fetch가 60초 넘으면 다음 tick 겹침 방지(낡은 데이터 덮어쓰기 차단)
+  loading=true;
+  try { render(await loadData()); }
+  catch(e){ $("dot").className="dot err"; $("statusTxt").innerHTML='<span style="color:var(--red)">데이터 로드 실패 — 잠시 후 재시도</span>'; }
+  finally { loading=false; }
+}
+$("refreshBtn").addEventListener("click", tick);
+tick();
+timer = setInterval(tick, REFRESH_MS);
+</script>
 </body>
 </html>

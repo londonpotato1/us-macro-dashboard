@@ -1,5 +1,5 @@
 {
-  "updated": "2026-05-30T10:30:52.425Z",
+  "updated": "2026-05-30T11:59:18.154Z",
   "errors": [],
   "yields": {
     "date": "05/29/2026",
@@ -9,10 +9,10 @@
     "source": "US Treasury (daily par yield)"
   },
   "crypto": {
-    "btc_usd": 73542,
-    "btc_24h_pct": 0.06763409974132495,
-    "eth_usd": 2016.3,
-    "eth_24h_pct": 0.4549693114094326,
+    "btc_usd": 73496,
+    "btc_24h_pct": 0.18544651077795166,
+    "eth_usd": 2014.66,
+    "eth_24h_pct": 0.5248155297211621,
     "source": "CoinGecko"
   },
   "stocks_oil": {
